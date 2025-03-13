@@ -3,7 +3,10 @@ package com.example.feedarticlesjetpackcompose.userInterface.create
 import MyTextField
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
@@ -43,10 +46,14 @@ fun CreateContent(
     onSubmitArticle: () -> Unit
 ) {
     val localContext = LocalContext.current
+    val scrollState = rememberScrollState()
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
+            .verticalScroll(scrollState)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top

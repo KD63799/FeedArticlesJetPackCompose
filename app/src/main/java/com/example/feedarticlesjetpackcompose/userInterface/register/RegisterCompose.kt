@@ -17,9 +17,9 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,17 +38,20 @@ import com.example.feedarticlesjetpackcompose.navigation.Screen
 import com.example.feedarticlesjetpackcompose.ui.theme.BlueJose
 
 @Composable
-fun RegisterScreen(navController: NavHostController, vm: RegisterViewModel) {
-    val context = LocalContext.current
+fun RegisterScreen(
+    navController: NavHostController,
+    registerVM: RegisterViewModel = hiltViewModel()
+) {
+    val localContext = LocalContext.current
 
-    LaunchedEffect(key1 = true) {
-        vm.messageFlow.collect { message ->
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+
+    LaunchedEffect(Unit) {
+        registerVM.messageFlow.collect { msg ->
+            Toast.makeText(localContext, msg, Toast.LENGTH_SHORT).show()
         }
     }
-
-    LaunchedEffect(key1 = true) {
-        vm.navigateToMain.collect { shouldNavigate ->
+    LaunchedEffect(Unit) {
+        registerVM.navigateToMainFlow.collect { shouldNavigate ->
             if (shouldNavigate) {
                 navController.navigate(Screen.Main.route) {
                     popUpTo(Screen.Register.route) { inclusive = true }
@@ -57,11 +60,12 @@ fun RegisterScreen(navController: NavHostController, vm: RegisterViewModel) {
         }
     }
 
+
     RegisterContent(
-        onRegisterClick = { login, password, confirmPassword ->
-            vm.registerUser(login, password, confirmPassword)
+        onSubmitRegistration = { userName, userPass, confirmPass ->
+            registerVM.performRegistration(userName, userPass, confirmPass)
         },
-        onAlreadyClick = {
+        onNavigateToLogin = {
             navController.navigate(Screen.Login.route) {
                 popUpTo(Screen.Register.route) { inclusive = true }
             }
@@ -71,12 +75,12 @@ fun RegisterScreen(navController: NavHostController, vm: RegisterViewModel) {
 
 @Composable
 fun RegisterContent(
-    onRegisterClick: (String, String, String) -> Unit,
-    onAlreadyClick: () -> Unit
+    onSubmitRegistration: (String, String, String) -> Unit,
+    onNavigateToLogin: () -> Unit
 ) {
-    var login by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
+    var userName by remember { mutableStateOf("") }
+    var userPass by remember { mutableStateOf("") }
+    var userConfirmPass by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -88,69 +92,58 @@ fun RegisterContent(
     ) {
         Text(
             text = stringResource(R.string.please_register),
-            style = TextStyle(
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = BlueJose
-            ),
+            style = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.Bold, color = BlueJose),
             modifier = Modifier.padding(bottom = 96.dp)
         )
 
         MyTextField(
-            value = login,
-            onValueChange = { login = it },
+            value = userName,
+            onValueChange = { userName = it },
             hint = stringResource(R.string.login),
             hintColor = BlueJose,
             modifier = Modifier.fillMaxWidth()
         )
-
         Spacer(modifier = Modifier.height(16.dp))
 
         MyTextField(
-            value = password,
-            onValueChange = { password = it },
+            value = userPass,
+            onValueChange = { userPass = it },
             hint = stringResource(R.string.password),
             hintColor = BlueJose,
             modifier = Modifier.fillMaxWidth(),
             isPassword = true
         )
-
         Spacer(modifier = Modifier.height(16.dp))
 
         MyTextField(
-            value = confirmPassword,
-            onValueChange = { confirmPassword = it },
+            value = userConfirmPass,
+            onValueChange = { userConfirmPass = it },
             hint = stringResource(R.string.confirm_password),
             hintColor = BlueJose,
             modifier = Modifier.fillMaxWidth(),
             isPassword = true
         )
-
         Spacer(modifier = Modifier.height(164.dp))
 
         Button(
-            onClick = { onRegisterClick(login, password, confirmPassword) },
+            onClick = { onSubmitRegistration(userName, userPass, userConfirmPass) },
             colors = ButtonDefaults.buttonColors(containerColor = BlueJose),
             modifier = Modifier.wrapContentWidth()
         ) {
             Text(text = stringResource(R.string.register))
         }
-
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
             text = stringResource(R.string.already_an_account_login),
             color = BlueJose,
-            modifier = Modifier.clickable { onAlreadyClick() }
+            modifier = Modifier.clickable { onNavigateToLogin() }
         )
     }
 }
 
-@Preview
+@Preview(showBackground = true)
 @Composable
-fun RegisterPreview() {
-    RegisterContent(
-        onRegisterClick = { _, _, _ -> },
-        onAlreadyClick = {}
-    )
+fun UserRegistrationPreview() {
+    RegisterContent(onSubmitRegistration = { _, _, _ -> }, onNavigateToLogin = {})
 }

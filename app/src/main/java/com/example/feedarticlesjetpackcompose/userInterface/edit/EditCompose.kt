@@ -4,6 +4,8 @@ import MyTextField
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
@@ -104,15 +106,19 @@ fun EditContent(
     onSubmitEdit: () -> Unit
 ) {
     val localContext = LocalContext.current
+    val scrollState = rememberScrollState()
+
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
+            .verticalScroll(scrollState)
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        // Titre de l'écran
+
         Text(
             text = stringResource(R.string.edit_article),
             style = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.Bold, color = BlueJose),

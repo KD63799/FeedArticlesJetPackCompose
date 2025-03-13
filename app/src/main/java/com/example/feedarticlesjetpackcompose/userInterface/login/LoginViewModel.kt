@@ -23,11 +23,10 @@ class LoginViewModel @Inject constructor(
     private val preferences: PreferencesManager
 ) : ViewModel() {
 
-    // Flow pour les messages (affichés en Toast)
+
     private val _messageFlow = MutableSharedFlow<String>()
     val messageFlow = _messageFlow.asSharedFlow()
 
-    // Flow pour déclencher la navigation vers l'écran principal
     private val _navigateToMain = MutableSharedFlow<Boolean>()
     val navigateToMain = _navigateToMain.asSharedFlow()
 
