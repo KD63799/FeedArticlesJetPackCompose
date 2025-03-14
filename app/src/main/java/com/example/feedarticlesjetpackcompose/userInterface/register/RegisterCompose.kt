@@ -36,34 +36,38 @@ import androidx.navigation.NavHostController
 import com.example.feedarticlesjetpackcompose.R
 import com.example.feedarticlesjetpackcompose.navigation.Screen
 import com.example.feedarticlesjetpackcompose.ui.theme.BlueJose
+import kotlinx.coroutines.launch
 
 @Composable
 fun RegisterScreen(
     navController: NavHostController,
     registerVM: RegisterViewModel = hiltViewModel()
 ) {
-    val localContext = LocalContext.current
+    val context = LocalContext.current
 
 
     LaunchedEffect(Unit) {
-        registerVM.messageFlow.collect { msg ->
-            Toast.makeText(localContext, msg, Toast.LENGTH_SHORT).show()
-        }
-    }
-    LaunchedEffect(Unit) {
-        registerVM.navigateToMainFlow.collect { shouldNavigate ->
-            if (shouldNavigate) {
-                navController.navigate(Screen.Main.route) {
-                    popUpTo(Screen.Register.route) { inclusive = true }
+        registerVM.run {
+            launch {
+                uiMessageFlow.collect { msg ->
+                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                }
+            }
+            launch {
+                navigateToMainFlow.collect { shouldNavigate ->
+                    if (shouldNavigate) {
+                        navController.navigate(Screen.Main.route) {
+                            popUpTo(Screen.Register.route) { inclusive = true }
+                        }
+                    }
                 }
             }
         }
     }
 
-
     RegisterContent(
-        onSubmitRegistration = { userName, userPass, confirmPass ->
-            registerVM.performRegistration(userName, userPass, confirmPass)
+        onSubmitRegistration = { user, pass, confirmPass ->
+            registerVM.performRegistration(user, pass, confirmPass)
         },
         onNavigateToLogin = {
             navController.navigate(Screen.Login.route) {
@@ -144,6 +148,6 @@ fun RegisterContent(
 
 @Preview(showBackground = true)
 @Composable
-fun UserRegistrationPreview() {
+fun RegisterPreview() {
     RegisterContent(onSubmitRegistration = { _, _, _ -> }, onNavigateToLogin = {})
 }

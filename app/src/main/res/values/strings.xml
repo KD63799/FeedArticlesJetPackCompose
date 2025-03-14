@@ -33,7 +33,7 @@
     <string name="manga">Manga</string>
     <string name="various">Various</string>
     <string name="created_at">Created at : %s</string>
-    <string name="category_type">Catégorie : %s</string>
+    <string name="category_type">Category : %s</string>
     <string name="delete">Delete</string>
     <string name="no_response_database">No response from the database. Please try again later.</string>
     <string name="article_deleted">The article was successfully deleted.</string>

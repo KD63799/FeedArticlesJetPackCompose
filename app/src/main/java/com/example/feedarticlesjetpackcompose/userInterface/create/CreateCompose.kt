@@ -3,7 +3,6 @@ package com.example.feedarticlesjetpackcompose.userInterface.create
 import MyTextField
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -45,7 +44,6 @@ fun CreateContent(
     onCategoryChanged: (Int) -> Unit,
     onSubmitArticle: () -> Unit
 ) {
-    val localContext = LocalContext.current
     val scrollState = rememberScrollState()
 
 
@@ -131,16 +129,16 @@ fun MyAsyncImage(imageUrl: String) {
 }
 
 @Composable
-fun CreateScreen(navController: NavHostController, vm: CreateViewModel = hiltViewModel()) {
-    val ctx = LocalContext.current
+fun CreateScreen(navController: NavHostController, viewModel: CreateViewModel = hiltViewModel()) {
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
-        vm.messageFlow.collect { resId ->
-            Toast.makeText(ctx, ctx.getString(resId), Toast.LENGTH_SHORT).show()
+        viewModel.uiMessageFlow.collect { resId ->
+            Toast.makeText(context, context.getString(resId), Toast.LENGTH_SHORT).show()
         }
     }
     LaunchedEffect(Unit) {
-        vm.navigateToMainFlow.collect { navigate ->
+        viewModel.navigateToMainFlow.collect { navigate ->
             if (navigate) {
                 navController.popBackStack()
             }
@@ -162,7 +160,7 @@ fun CreateScreen(navController: NavHostController, vm: CreateViewModel = hiltVie
         selectedCategoryRes = currentCategoryRes,
         onCategoryChanged = { currentCategoryRes = it },
         onSubmitArticle = {
-            vm.createNewArticle(
+            viewModel.createNewArticle(
                 title = articleTitle,
                 description = articleBody,
                 imageUrl = articleImageUrl,

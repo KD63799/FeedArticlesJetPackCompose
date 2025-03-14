@@ -9,5 +9,5 @@ private val outputFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()
 fun formatDate(dateString: String): String {
     return inputFormatter.parse(dateString)?.let { date ->
         outputFormatter.format(date)
-    } ?: "Date invalide"
+    } ?: "Invalid date"
 }

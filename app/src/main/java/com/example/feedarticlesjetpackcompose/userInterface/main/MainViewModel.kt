@@ -32,8 +32,8 @@ class MainViewModel @Inject constructor(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
 
-    private val _messageFlow = MutableSharedFlow<Int>()
-    val messageFlow = _messageFlow.asSharedFlow()
+    private val _uiMessageFlow = MutableSharedFlow<Int>()
+    val uiMessageFlow = _uiMessageFlow.asSharedFlow()
 
     private val _navigateToLoginFlow = MutableSharedFlow<Boolean>()
     val navigateToRegisterFlow = _navigateToLoginFlow.asSharedFlow()
@@ -60,12 +60,10 @@ class MainViewModel @Inject constructor(
             viewModelScope.launch {
                 _isRefreshing.value = true
                 try {
-                    val response = withContext(Dispatchers.IO) {
-                        apiService.getAllArticles(token = token)
-                    }
+                    val response = withContext(Dispatchers.IO) { apiService.getAllArticles(token) }
                     val articles = response?.body()
                     when {
-                        response == null -> _messageFlow.emit(R.string.no_response_database)
+                        response == null -> _uiMessageFlow.emit(R.string.no_response_database)
                         response.code() != 0 -> when (response.code()) {
                             200 -> {
                                 _articlesListStateFlow.value = if (currentFilterCategory != 0)
@@ -76,14 +74,14 @@ class MainViewModel @Inject constructor(
                             }
                             400, 401 -> {
                                 disconnectUser()
-                                _messageFlow.emit(R.string.error_from_database_redirection)
+                                _uiMessageFlow.emit(R.string.error_from_database_redirection)
                             }
-                            503 -> _messageFlow.emit(R.string.no_response_database)
+                            503 -> _uiMessageFlow.emit(R.string.no_response_database)
                             else -> return@launch
                         }
                     }
                 } catch (e: ConnectException) {
-                    _messageFlow.emit(R.string.error_from_database)
+                    _uiMessageFlow.emit(R.string.error_from_database)
                 } finally {
                     _isRefreshing.value = false
                 }
@@ -109,31 +107,29 @@ class MainViewModel @Inject constructor(
     }
 
     fun deleteArticle(articleId: Long) {
-        try {
-            viewModelScope.launch {
+        viewModelScope.launch {
+            try {
                 val response = withContext(Dispatchers.IO) {
                     apiService.deleteArticle(articleId, preferences.authToken!!)
                 }
                 when {
-                    response == null -> _messageFlow.emit(R.string.no_response_database)
+                    response == null -> _uiMessageFlow.emit(R.string.no_response_database)
                     response.code() != 0 -> when (response.code()) {
                         201 -> {
-                            _messageFlow.emit(R.string.article_deleted)
+                            _uiMessageFlow.emit(R.string.article_deleted)
                             fetchAllArticles()
                         }
-                        304 -> _messageFlow.emit(R.string.article_not_deleted)
+                        304 -> _uiMessageFlow.emit(R.string.article_not_deleted)
                         400, 401 -> {
                             disconnectUser()
-                            _messageFlow.emit(R.string.error_from_database_redirection)
+                            _uiMessageFlow.emit(R.string.error_from_database_redirection)
                         }
-                        503 -> _messageFlow.emit(R.string.no_response_database)
+                        503 -> _uiMessageFlow.emit(R.string.no_response_database)
                         else -> return@launch
                     }
                 }
-            }
-        } catch (e: ConnectException) {
-            viewModelScope.launch {
-                _messageFlow.emit(R.string.error_from_database)
+            } catch (e: ConnectException) {
+                _uiMessageFlow.emit(R.string.error_from_database)
             }
         }
     }

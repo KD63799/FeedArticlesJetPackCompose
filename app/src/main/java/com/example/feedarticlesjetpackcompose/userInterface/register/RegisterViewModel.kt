@@ -19,16 +19,16 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RegisterViewModel @Inject constructor(
-    @ApplicationContext private val appCtx: Context,
+    @ApplicationContext private val appContext: Context,
     private val apiService: ApiService,
     private val prefs: PreferencesManager
 ) : ViewModel() {
 
     private val _uiMessageFlow = MutableSharedFlow<String>()
-    val messageFlow = _uiMessageFlow.asSharedFlow()
+    val uiMessageFlow = _uiMessageFlow.asSharedFlow()
 
-    private val _navigateToMainFlow = MutableSharedFlow<Boolean>()
-    val navigateToMainFlow = _navigateToMainFlow.asSharedFlow()
+    private val _homeNavigationFlow = MutableSharedFlow<Boolean>()
+    val navigateToMainFlow = _homeNavigationFlow.asSharedFlow()
 
     fun performRegistration(userName: String, userPassword: String, confirmPassword: String) {
         val cleanUserName = userName.trim()
@@ -37,18 +37,16 @@ class RegisterViewModel @Inject constructor(
 
         if (cleanUserName.isEmpty() || cleanUserPassword.isEmpty() || cleanConfirmPassword.isEmpty()) {
             viewModelScope.launch {
-                _uiMessageFlow.emit(appCtx.getString(R.string.please_fill_in_all_fields))
+                _uiMessageFlow.emit(appContext.getString(R.string.please_fill_in_all_fields))
             }
             return
         }
-
         if (cleanUserPassword != cleanConfirmPassword) {
             viewModelScope.launch {
-                _uiMessageFlow.emit(appCtx.getString(R.string.password_not_match))
+                _uiMessageFlow.emit(appContext.getString(R.string.password_not_match))
             }
             return
         }
-
         viewModelScope.launch {
             try {
                 val response = withContext(Dispatchers.IO) {
@@ -56,24 +54,24 @@ class RegisterViewModel @Inject constructor(
                 }
                 val responseBody = response?.body()
                 if (response == null) {
-                    _uiMessageFlow.emit(appCtx.getString(R.string.no_response_from_server))
+                    _uiMessageFlow.emit(appContext.getString(R.string.no_response_from_server))
                 } else {
                     when (response.code()) {
                         200 -> {
                             prefs.authToken = responseBody!!.token
                             prefs.currentUserId = responseBody.id
-                            _navigateToMainFlow.emit(true)
-                            _uiMessageFlow.emit(appCtx.getString(R.string.account_created))
+                            _homeNavigationFlow.emit(true)
+                            _uiMessageFlow.emit(appContext.getString(R.string.account_created))
                         }
-                        303 -> _uiMessageFlow.emit(appCtx.getString(R.string.login_already_used))
-                        304 -> _uiMessageFlow.emit(appCtx.getString(R.string.account_not_created))
-                        400 -> _uiMessageFlow.emit(appCtx.getString(R.string.please_check_the_fields))
-                        503 -> _uiMessageFlow.emit(appCtx.getString(R.string.service_unavailable))
+                        303 -> _uiMessageFlow.emit(appContext.getString(R.string.login_already_used))
+                        304 -> _uiMessageFlow.emit(appContext.getString(R.string.account_not_created))
+                        400 -> _uiMessageFlow.emit(appContext.getString(R.string.please_check_the_fields))
+                        503 -> _uiMessageFlow.emit(appContext.getString(R.string.service_unavailable))
                         else -> return@launch
                     }
                 }
             } catch (ex: ConnectException) {
-                _uiMessageFlow.emit(appCtx.getString(R.string.connection_error))
+                _uiMessageFlow.emit(appContext.getString(R.string.connection_error))
             }
         }
     }

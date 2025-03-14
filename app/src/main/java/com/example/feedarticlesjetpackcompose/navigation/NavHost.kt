@@ -21,12 +21,12 @@ import com.example.feedarticlesjetpackcompose.userInterface.splash.SplashScreen
 import com.example.feedarticlesjetpackcompose.userInterface.splash.SplashViewModel
 
 sealed class Screen(val route: String) {
-    object Splash : Screen("splash")
-    object Login : Screen("login")
-    object Register : Screen("register")
-    object Main : Screen("main")
-    object Create : Screen("create")
-    object Edit : Screen("edit")
+    data object Splash : Screen("splash")
+    data object Login : Screen("login")
+    data object Register : Screen("register")
+    data object Main : Screen("main")
+    data object Create : Screen("create")
+    data object Edit : Screen("edit")
 }
 
 

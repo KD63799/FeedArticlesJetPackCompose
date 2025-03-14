@@ -23,23 +23,24 @@ class LoginViewModel @Inject constructor(
     private val preferences: PreferencesManager
 ) : ViewModel() {
 
-
-    private val _messageFlow = MutableSharedFlow<String>()
-    val messageFlow = _messageFlow.asSharedFlow()
+    private val _uiMessageFlow = MutableSharedFlow<String>()
+    val uiMessageFlow = _uiMessageFlow.asSharedFlow()
 
     private val _navigateToMain = MutableSharedFlow<Boolean>()
     val navigateToMain = _navigateToMain.asSharedFlow()
 
     fun performLogin(username: String, password: String) {
-        val user = username.trim()
-        val pass = password.trim()
-        if (user.isEmpty() || pass.isEmpty()) {
+        val cleanUsername = username.trim()
+        val cleanPassword = password.trim()
+
+        if (cleanUsername.isEmpty() || cleanPassword.isEmpty()) {
             viewModelScope.launch {
-                _messageFlow.emit(appContext.getString(R.string.please_fill_in_all_fields))
+                _uiMessageFlow.emit(appContext.getString(R.string.please_fill_in_all_fields))
             }
             return
         }
-        loginUser(user, pass)
+
+        loginUser(cleanUsername, cleanPassword)
     }
 
     private fun loginUser(username: String, password: String) {
@@ -50,24 +51,24 @@ class LoginViewModel @Inject constructor(
                 }
                 val responseBody = response?.body()
                 if (response == null) {
-                    _messageFlow.emit(appContext.getString(R.string.no_response_from_server))
+                    _uiMessageFlow.emit(appContext.getString(R.string.no_response_from_server))
                 } else {
                     when (response.code()) {
                         200 -> {
                             preferences.authToken = responseBody!!.token
                             preferences.currentUserId = responseBody.id
                             _navigateToMain.emit(true)
-                            _messageFlow.emit(appContext.getString(R.string.login_successful))
+                            _uiMessageFlow.emit(appContext.getString(R.string.login_successful))
                         }
-                        304 -> _messageFlow.emit(appContext.getString(R.string.internal_error))
-                        400 -> _messageFlow.emit(appContext.getString(R.string.please_check_the_fields))
-                        401 -> _messageFlow.emit(appContext.getString(R.string.incorrect_information))
-                        503 -> _messageFlow.emit(appContext.getString(R.string.service_unavailable))
+                        304 -> _uiMessageFlow.emit(appContext.getString(R.string.internal_error))
+                        400 -> _uiMessageFlow.emit(appContext.getString(R.string.please_check_the_fields))
+                        401 -> _uiMessageFlow.emit(appContext.getString(R.string.incorrect_information))
+                        503 -> _uiMessageFlow.emit(appContext.getString(R.string.service_unavailable))
                         else -> return@launch
                     }
                 }
             } catch (ex: ConnectException) {
-                _messageFlow.emit(appContext.getString(R.string.connection_error))
+                _uiMessageFlow.emit(appContext.getString(R.string.connection_error))
             }
         }
     }

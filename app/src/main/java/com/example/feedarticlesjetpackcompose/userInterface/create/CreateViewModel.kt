@@ -22,8 +22,8 @@ class CreateViewModel @Inject constructor(
     private val preferences: PreferencesManager
 ) : ViewModel() {
 
-    private val _messageFlow = MutableSharedFlow<Int>()
-    val messageFlow = _messageFlow.asSharedFlow()
+    private val _uiMessageFlow = MutableSharedFlow<Int>()
+    val uiMessageFlow = _uiMessageFlow.asSharedFlow()
 
     private val _navigateToMainFlow = MutableSharedFlow<Boolean>()
     val navigateToMainFlow = _navigateToMainFlow.asSharedFlow()
@@ -75,14 +75,14 @@ class CreateViewModel @Inject constructor(
                         }
                         else -> return@launch
                     }
-                    _messageFlow.emit(resultMessage)
+                    _uiMessageFlow.emit(resultMessage)
                 } catch (ex: ConnectException) {
-                    _messageFlow.emit(R.string.error_from_database)
+                    _uiMessageFlow.emit(R.string.error_from_database)
                 }
             }
         } else {
             viewModelScope.launch {
-                _messageFlow.emit(R.string.please_fill_in_all_fields)
+                _uiMessageFlow.emit(R.string.please_fill_in_all_fields)
             }
         }
     }

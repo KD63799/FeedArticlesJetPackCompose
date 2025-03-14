@@ -3,13 +3,28 @@ package com.example.feedarticlesjetpackcompose.userInterface.edit
 import MyTextField
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -24,7 +39,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
@@ -32,60 +46,55 @@ import com.example.feedarticlesjetpackcompose.R
 import com.example.feedarticlesjetpackcompose.design_system.CategorySelector
 import com.example.feedarticlesjetpackcompose.ui.theme.BlueJose
 import com.example.feedarticlesjetpackcompose.utils.CategoryManager
+import kotlinx.coroutines.launch
 
 @Composable
 fun EditScreen(
     navController: NavHostController,
-    vm: EditViewModel,
+    viewModel: EditViewModel,
     articleId: Long
 ) {
-    val localContext = LocalContext.current
-    val article by vm.currentArticleFlow.collectAsState()
-
+    val context = LocalContext.current
+    val currentArticle by viewModel.currentArticleFlow.collectAsState()
 
     LaunchedEffect(articleId) {
-        vm.fetchArticle(articleId)
-    }
-
-
-    LaunchedEffect(Unit) {
-        vm.messageFlow.collect { resId ->
-            Toast.makeText(localContext, localContext.getString(resId), Toast.LENGTH_SHORT).show()
+        viewModel.fetchArticle(articleId)
+        launch {
+            viewModel.uiMessageFlow.collect { resId ->
+                Toast.makeText(context, context.getString(resId), Toast.LENGTH_SHORT).show()
+            }
         }
-    }
-
-
-    LaunchedEffect(Unit) {
-        vm.navigateToMainFlow.collect { shouldNavigate ->
-            if (shouldNavigate) {
-                navController.popBackStack()
+        launch {
+            viewModel.navigateToMainFlow.collect { shouldNavigate ->
+                if (shouldNavigate) {
+                    navController.popBackStack()
+                }
             }
         }
     }
 
-
-    article?.let { art ->
-        var editedTitle by remember { mutableStateOf(art.titre) }
-        var editedContent by remember { mutableStateOf(art.descriptif) }
-        var editedImageUrl by remember { mutableStateOf(art.urlImage) }
-        var selectedCategoryResId by remember(art.id) {
-            mutableIntStateOf(CategoryManager.getCategoryResourceId(art.categorie))
+    currentArticle?.let { article ->
+        var updatedTitle by remember(article.id) { mutableStateOf(article.titre) }
+        var updatedContent by remember(article.id) { mutableStateOf(article.descriptif) }
+        var updatedImageUrl by remember(article.id) { mutableStateOf(article.urlImage) }
+        var selectedCategoryResId by remember(article.id) {
+            mutableIntStateOf(CategoryManager.getCategoryResourceId(article.categorie))
         }
 
         EditContent(
-            articleTitle = editedTitle,
-            onTitleChanged = { editedTitle = it },
-            articleContent = editedContent,
-            onContentChanged = { editedContent = it },
-            articleImageUrl = editedImageUrl,
-            onImageUrlChanged = { editedImageUrl = it },
+            articleTitle = updatedTitle,
+            onTitleChanged = { updatedTitle = it },
+            articleContent = updatedContent,
+            onContentChanged = { updatedContent = it },
+            articleImageUrl = updatedImageUrl,
+            onImageUrlChanged = { updatedImageUrl = it },
             selectedCategoryResId = selectedCategoryResId,
             onCategoryChanged = { selectedCategoryResId = it },
             onSubmitEdit = {
-                vm.updateArticle(
-                    title = editedTitle,
-                    description = editedContent,
-                    imageUrl = editedImageUrl,
+                viewModel.updateArticle(
+                    title = updatedTitle,
+                    description = updatedContent,
+                    imageUrl = updatedImageUrl,
                     categoryButtonResId = selectedCategoryResId
                 )
             }
@@ -105,9 +114,7 @@ fun EditContent(
     onCategoryChanged: (Int) -> Unit,
     onSubmitEdit: () -> Unit
 ) {
-    val localContext = LocalContext.current
     val scrollState = rememberScrollState()
-
 
     Column(
         modifier = Modifier
@@ -118,13 +125,11 @@ fun EditContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-
         Text(
             text = stringResource(R.string.edit_article),
             style = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.Bold, color = BlueJose),
             modifier = Modifier.padding(top = 12.dp, bottom = 128.dp)
         )
-
         MyTextField(
             value = articleTitle,
             onValueChange = onTitleChanged,
@@ -133,18 +138,14 @@ fun EditContent(
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(16.dp))
-
         MyTextField(
             value = articleContent,
             onValueChange = onContentChanged,
             hint = stringResource(R.string.content),
             hintColor = BlueJose,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(120.dp)
+            modifier = Modifier.fillMaxWidth().height(120.dp)
         )
         Spacer(modifier = Modifier.height(32.dp))
-
         MyTextField(
             value = articleImageUrl,
             onValueChange = onImageUrlChanged,
@@ -153,17 +154,14 @@ fun EditContent(
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(32.dp))
-
         MyAsyncImg(articleImageUrl)
         Spacer(modifier = Modifier.height(32.dp))
-
         CategorySelector(
             categoryResourceIds = listOf(R.string.sport, R.string.manga, R.string.various),
             defaultCategoryResId = selectedCategoryResId,
             onCategorySelected = onCategoryChanged
         )
         Spacer(modifier = Modifier.height(48.dp))
-
         Button(
             onClick = onSubmitEdit,
             colors = ButtonDefaults.buttonColors(containerColor = BlueJose),
@@ -184,10 +182,7 @@ fun MyAsyncImg(imageUrl: String) {
         placeholder = painterResource(id = R.drawable.feedarticles_logo),
         contentDescription = stringResource(R.string.a_downloaded_image),
         contentScale = ContentScale.Crop,
-        modifier = Modifier
-            .size(100.dp)
-            .clip(RectangleShape)
-            .padding(10.dp)
+        modifier = Modifier.size(100.dp).clip(RectangleShape).padding(10.dp)
     )
 }
 
@@ -195,11 +190,11 @@ fun MyAsyncImg(imageUrl: String) {
 @Composable
 fun EditPreview() {
     EditContent(
-        articleTitle = "Sample Title",
+        articleTitle = "",
         onTitleChanged = {},
-        articleContent = "Sample Content",
+        articleContent = "",
         onContentChanged = {},
-        articleImageUrl = "https://example.com/image.png",
+        articleImageUrl = "",
         onImageUrlChanged = {},
         selectedCategoryResId = R.string.sport,
         onCategoryChanged = {},

@@ -25,8 +25,8 @@ class EditViewModel @Inject constructor(
     private val preferences: PreferencesManager
 ) : ViewModel() {
 
-    private val _messageFlow = MutableSharedFlow<Int>()
-    val messageFlow = _messageFlow.asSharedFlow()
+    private val _uiMessageFlow = MutableSharedFlow<Int>()
+    val uiMessageFlow = _uiMessageFlow.asSharedFlow()
 
     private val _navigateToMainFlow = MutableSharedFlow<Boolean>()
     val navigateToMainFlow = _navigateToMainFlow.asSharedFlow()
@@ -42,27 +42,27 @@ class EditViewModel @Inject constructor(
                 }
                 val articleData = response?.body()
                 when {
-                    response == null -> _messageFlow.emit(R.string.no_response_database)
+                    response == null -> _uiMessageFlow.emit(R.string.no_response_database)
                     response.code() != 0 -> {
                         when (response.code()) {
                             200 -> _currentArticleFlow.value = articleData!!
                             303 -> {
                                 _navigateToMainFlow.emit(true)
-                                _messageFlow.emit(R.string.article_not_found)
+                                _uiMessageFlow.emit(R.string.article_not_found)
                             }
-                            400 -> _messageFlow.emit(R.string.please_check_the_fields)
+                            400 -> _uiMessageFlow.emit(R.string.please_check_the_fields)
                             401 -> {
                                 _navigateToMainFlow.emit(true)
-                                _messageFlow.emit(R.string.please_logout)
+                                _uiMessageFlow.emit(R.string.please_logout)
                             }
-                            503 -> _messageFlow.emit(R.string.error_from_database)
+                            503 -> _uiMessageFlow.emit(R.string.error_from_database)
                             else -> return@launch
                         }
                     }
                 }
             } catch (ex: ConnectException) {
                 viewModelScope.launch {
-                    _messageFlow.emit(R.string.error_from_database)
+                    _uiMessageFlow.emit(R.string.error_from_database)
                 }
             }
         }
@@ -77,12 +77,12 @@ class EditViewModel @Inject constructor(
         val cleanedTitle = title.trim()
         val cleanedDescription = description.trim()
         val cleanedImageUrl = imageUrl.trim()
-        val categoryResId = CategoryManager.getCategoryResourceId(categoryButtonResId)
+        val numericCategory = CategoryManager.getCategoryNumericId(categoryButtonResId)
 
         if (cleanedTitle.isNotEmpty() &&
             cleanedDescription.isNotEmpty() &&
             cleanedImageUrl.isNotEmpty() &&
-            categoryResId != 0
+            numericCategory != 0
         ) {
             viewModelScope.launch {
                 try {
@@ -95,7 +95,7 @@ class EditViewModel @Inject constructor(
                                 cleanedTitle,
                                 cleanedDescription,
                                 cleanedImageUrl,
-                                categoryResId
+                                numericCategory
                             )
                         )
                     }
@@ -117,16 +117,16 @@ class EditViewModel @Inject constructor(
                         }
                         else -> return@launch
                     }
-                    _messageFlow.emit(resultMessage)
+                    _uiMessageFlow.emit(resultMessage)
                 } catch (ex: ConnectException) {
                     viewModelScope.launch {
-                        _messageFlow.emit(R.string.error_from_database)
+                        _uiMessageFlow.emit(R.string.error_from_database)
                     }
                 }
             }
         } else {
             viewModelScope.launch {
-                _messageFlow.emit(R.string.please_fill_in_all_fields)
+                _uiMessageFlow.emit(R.string.please_fill_in_all_fields)
             }
         }
     }

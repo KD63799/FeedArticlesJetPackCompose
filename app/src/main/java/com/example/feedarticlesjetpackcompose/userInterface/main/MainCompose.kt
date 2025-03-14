@@ -47,62 +47,66 @@ import com.example.feedarticlesjetpackcompose.navigation.Screen
 import com.example.feedarticlesjetpackcompose.network.dtosResponse.ArticleDto
 import com.example.feedarticlesjetpackcompose.ui.theme.BlueJose
 import com.example.feedarticlesjetpackcompose.utils.CategoryManager
+import kotlinx.coroutines.launch
 
 @Composable
 fun MainScreen(
     navController: NavHostController,
-    vm: MainViewModel = hiltViewModel()
+    viewModel: MainViewModel = hiltViewModel()
 ) {
     val localContext = LocalContext.current
-    val articlesList by vm.articlesListStateFlow.collectAsState()
-    val isRefreshing by vm.isRefreshing.collectAsState()
+    val articles by viewModel.articlesListStateFlow.collectAsState()
+    val isRefreshing by viewModel.isRefreshing.collectAsState()
     var currentArticleId by remember { mutableStateOf(0L) }
     var selectedCategoryResId by rememberSaveable { mutableStateOf(R.string.all) }
 
     LaunchedEffect(Unit) {
-        vm.fetchAllArticles()
-    }
-    LaunchedEffect(Unit) {
-        vm.navigateToRegisterFlow.collect { shouldNavigate ->
-            if (shouldNavigate) {
-                navController.navigate(Screen.Login.route) {
-                    popUpTo(Screen.Main.route) { inclusive = true }
+        viewModel.fetchAllArticles()
+
+        launch {
+            viewModel.navigateToRegisterFlow.collect { shouldNavigate ->
+                if (shouldNavigate) {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Main.route) { inclusive = true }
+                    }
                 }
             }
         }
-    }
-    LaunchedEffect(Unit) {
-        vm.navigateToEditFlow.collect { shouldNavigate ->
-            if (shouldNavigate) {
-                navController.navigate(Screen.Edit.route + "/$currentArticleId")
+
+        launch {
+            viewModel.navigateToEditFlow.collect { shouldNavigate ->
+                if (shouldNavigate) {
+                    navController.navigate(Screen.Edit.route + "/$currentArticleId")
+                }
             }
         }
-    }
-    LaunchedEffect(Unit) {
-        vm.messageFlow.collect { resId ->
-            Toast.makeText(localContext, localContext.getString(resId), Toast.LENGTH_SHORT).show()
+
+        launch {
+            viewModel.uiMessageFlow.collect { resId ->
+                Toast.makeText(localContext, localContext.getString(resId), Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
     MainContent(
-        articles = articlesList,
+        articles = articles,
         isRefreshing = isRefreshing,
+        selectedCategory = selectedCategoryResId,
         onAddArticleClick = { navController.navigate(Screen.Create.route) },
-        onLogoutClick = { vm.disconnectUser() },
-        currentUserId = vm.getUserId(),
-        onCategorySelected = { newCategoryResId ->
-            selectedCategoryResId = newCategoryResId
-            vm.filterArticlesByCategory(newCategoryResId)
+        onLogoutClick = { viewModel.disconnectUser() },
+        currentUserId = viewModel.getUserId(),
+        onCategorySelected = { newCatResId ->
+            selectedCategoryResId = newCatResId
+            viewModel.filterArticlesByCategory(newCatResId)
         },
-        onRefreshArticles = { vm.fetchAllArticles() },
+        onRefreshArticles = { viewModel.fetchAllArticles() },
         onDeleteArticle = { articleId ->
-            vm.deleteArticle(articleId)
+            viewModel.deleteArticle(articleId)
         },
         onArticleClick = { articleId ->
             currentArticleId = articleId
-            vm.triggerNavigationToEdit()
-        },
-        selectedCategory = selectedCategoryResId
+            viewModel.triggerNavigationToEdit()
+        }
     )
 }
 
@@ -111,14 +115,14 @@ fun MainScreen(
 fun MainContent(
     articles: List<ArticleDto> = emptyList(),
     isRefreshing: Boolean,
+    selectedCategory: Int,
     onAddArticleClick: () -> Unit,
     onLogoutClick: () -> Unit,
     currentUserId: Long,
     onCategorySelected: (Int) -> Unit,
     onRefreshArticles: () -> Unit,
     onDeleteArticle: (Long) -> Unit,
-    onArticleClick: (Long) -> Unit,
-    selectedCategory: Int
+    onArticleClick: (Long) -> Unit
 ) {
     val localContext = LocalContext.current
     val pullToRefreshState = rememberPullToRefreshState()
@@ -126,10 +130,12 @@ fun MainContent(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color.White)
             .padding(10.dp)
             .systemBarsPadding()
     ) {
         Column {
+
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 modifier = Modifier.fillMaxWidth()
@@ -181,12 +187,11 @@ fun MainContent(
                         }
                     }
                 }
+
                 CategorySelector(
                     categoryResourceIds = CategoryManager.categoryResourceIdsIncludingAll,
                     defaultCategoryResId = selectedCategory,
-                    onCategorySelected = { newCategoryResId ->
-                        onCategorySelected(newCategoryResId)
-                    }
+                    onCategorySelected = onCategorySelected
                 )
             }
         }
@@ -199,13 +204,13 @@ fun MainPreview() {
     MainContent(
         articles = emptyList(),
         isRefreshing = false,
+        selectedCategory = R.string.all,
         onAddArticleClick = {},
         onLogoutClick = {},
         currentUserId = 0L,
         onCategorySelected = {},
         onRefreshArticles = {},
         onDeleteArticle = {},
-        onArticleClick = {},
-        selectedCategory = R.string.all
+        onArticleClick = {}
     )
 }
